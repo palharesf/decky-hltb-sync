@@ -216,3 +216,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Private development data
+.local/
+node_modules/
+*.sqlite3*
