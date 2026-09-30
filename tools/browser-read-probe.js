@@ -3,10 +3,10 @@
 (() => {
   if (location.origin !== 'https://howlongtobeat.com' ||
       !/^\/submit\/edit\/\d+\/?$/.test(location.pathname)) {
-    throw new Error('Abra a página de edição do registro existente no HLTB.');
+    throw new Error('Open the existing HLTB record edit page.');
   }
   const node = document.getElementById('__NEXT_DATA__');
-  if (!node) throw new Error('Formato da página não reconhecido.');
+  if (!node) throw new Error('Unrecognized page format.');
   const record = JSON.parse(node.textContent).props?.pageProps?.editData;
   const submissionId = Number(location.pathname.split('/')[3]);
   if (!record || record.submissionId !== submissionId ||
@@ -14,7 +14,7 @@
       !Number.isInteger(record.gameId) || record.gameId <= 0 ||
       typeof record.platform !== 'string' || !record.platform ||
       !record.general?.progress) {
-    throw new Error('Registro ausente, incompatível ou login necessário.');
+    throw new Error('Missing or unsupported record, or login required.');
   }
   // Report no user identifiers, username, IP, notes, cookies or full page data.
   const report = {

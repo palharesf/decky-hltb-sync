@@ -5,10 +5,10 @@ from .records import canonical
 
 def send_manual(store, job_id, transport, *, authorized=False):
     if not authorized:
-        raise PermissionError('Envio exige autorização para esta proposta')
+        raise PermissionError('Submission requires authorization for this proposal')
     job = store.job(job_id)
     if job['state'] != 'prepared':
-        raise ValueError('Reenvio bloqueado; releia para reconciliar')
+        raise ValueError('Resubmission blocked; reread to reconcile')
     before = json.loads(job['before_json'])
     current = transport.read(before['submissionId'])
     if canonical(current) != job['before_json']:

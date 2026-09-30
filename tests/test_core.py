@@ -248,10 +248,10 @@ class CoreTests(unittest.TestCase):
         self.assertEqual(self.session()['state'], 'attention')
 
     def test_future_schema_refuses_to_downgrade(self):
-        self.store.db.execute('PRAGMA user_version=2')
+        self.store.db.execute('PRAGMA user_version=3')
         with self.assertRaises(ValueError):
             Store(self.path)
-        self.assertEqual(self.store.db.execute('PRAGMA user_version').fetchone()[0], 2)
+        self.assertEqual(self.store.db.execute('PRAGMA user_version').fetchone()[0], 3)
 
 
 if __name__ == '__main__':

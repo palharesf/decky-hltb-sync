@@ -17,7 +17,7 @@ def validate(record):
             raise ValueError()
         seconds(record)
     except (KeyError, TypeError, ValueError):
-        raise RecordError('Registro incompatível ou autenticação necessária') from None
+        raise RecordError('Unsupported record or authentication required') from None
     return record
 
 
@@ -25,17 +25,17 @@ def seconds(record):
     progress = record['general']['progress']
     values = [progress[k] for k in ('hours', 'minutes', 'seconds')]
     if any(v is not None and (type(v) is not int or v < 0) for v in values):
-        raise RecordError('Formato de tempo desconhecido')
+        raise RecordError('Unknown time format')
     h, m, s = [v or 0 for v in values]
     if m >= 60 or s >= 60:
-        raise RecordError('Tempo fora do intervalo')
+        raise RecordError('Time out of range')
     return h * 3600 + m * 60 + s
 
 
 def proposed(record, delta):
     validate(record)
     if type(delta) is not int or delta <= 0:
-        raise RecordError('A sessão deve ter segundos inteiros positivos')
+        raise RecordError('Session duration must be positive whole seconds')
     result = copy.deepcopy(record)
     total = seconds(record) + delta
     h, remainder = divmod(total, 3600)
@@ -74,4 +74,4 @@ def parse_edit_html(html):
         record = json.loads(''.join(parser.parts))['props']['pageProps']['editData']
         return validate(record)
     except (ValueError, KeyError, TypeError):
-        raise RecordError('Página sem registro editável reconhecido') from None
+        raise RecordError('Page does not contain a recognized editable record') from None

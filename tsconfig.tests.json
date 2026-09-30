@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {"outDir": ".local/test-build", "rootDir": "src"},
+  "include": ["src/steam.ts", "src/types.ts"]
+}

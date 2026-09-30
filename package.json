@@ -1,14 +1,15 @@
 {
   "name": "decky-hltb-sync",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "HLTB Sync for Deck — piloto local",
+  "description": "Account-linked HowLongToBeat session tracking for Decky",
   "type": "module",
   "license": "MIT",
   "scripts": {
     "build": "rollup -c",
     "typecheck": "tsc --noEmit",
-    "test": "python -m unittest discover -s tests -v && node --test tests/browser-probe.test.mjs"
+    "test": "python -m unittest discover -s tests -v && tsc -p tsconfig.tests.json && node --test tests/browser-probe.test.mjs tests/steam.test.mjs",
+    "package": "pnpm build && python tools/package.py"
   },
   "devDependencies": {
     "@decky/rollup": "^1.0.2",

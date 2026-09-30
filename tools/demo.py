@@ -34,7 +34,7 @@ if __name__ == '__main__':
                                      ('3','resume',1000), ('4','stop',1010)]:
             store.event(event_id, '999', kind, 'demo', tick)
         job = store.prepare(store.sessions()[0]['id'], record)
-        print(f"SIMULAÇÃO: anterior={seconds(job['before'])}s; proposto={seconds(job['after'])}s")
-        print('Verificação simulada:', send_manual(store, job['id'], FakeHLTB(record), authorized=True))
-        print('Estado:', store.sessions()[0]['state'])
+        print(f"SIMULATION: before={seconds(job['before'])}s; proposed={seconds(job['after'])}s")
+        print('Simulated verification:', send_manual(store, job['id'], FakeHLTB(record), authorized=True))
+        print('State:', store.sessions()[0]['state'])
         store.close()
