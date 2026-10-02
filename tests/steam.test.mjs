@@ -12,6 +12,15 @@ test('Steam adapter preserves shortcut IDs and reads lifetime totals', () => {
   assert.equal(libraryApps('missing').length, 0);
 });
 
+test('Non-Steam history reads AppDetails minutes instead of an empty overview total', () => {
+  globalThis.appStore = {allApps: [app], GetAppOverviewByAppID: () => app};
+  globalThis.appDetailsStore = {GetAppDetails: () => ({nPlaytimeForever: 109})};
+  try {
+    assert.equal(currentApp('999').minutes, 109);
+    assert.equal(currentApp('999').steam, false);
+  } finally {delete globalThis.appDetailsStore;}
+});
+
 test('polls running apps, serializes suspend/resume and unregisters', async () => {
   const originalInterval = globalThis.setInterval;
   const originalClear = globalThis.clearInterval;

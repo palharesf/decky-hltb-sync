@@ -1,7 +1,7 @@
 """Lossless edit-data handling. No defaults for missing remote records."""
 import copy
 import json
-from html.parser import HTMLParser
+import re
 
 
 class RecordError(ValueError):
@@ -48,30 +48,50 @@ def canonical(record):
     return json.dumps(record, sort_keys=True, separators=(',', ':'), ensure_ascii=False)
 
 
-class _NextData(HTMLParser):
-    def __init__(self):
-        super().__init__()
-        self.active = False
-        self.parts = []
+def submission_matches(expected, actual):
+    """Observed server normalization only; all user-editable fields stay strict."""
+    normalized = copy.deepcopy(expected)
+    # HLTB replaces its own request-IP metadata when accepting a submission.
+    if 'userIp' in actual:
+        normalized['userIp'] = actual['userIp']
+    # An unset storefront is saved as an empty string by the current server.
+    if 'storefront' in normalized and 'storefront' in actual:
+        if normalized['storefront'] is None and actual['storefront'] == '':
+            normalized['storefront'] = ''
+    return canonical(normalized) == canonical(actual)
 
-    def handle_starttag(self, tag, attrs):
-        if tag == 'script':
-            self.active = dict(attrs).get('id') == '__NEXT_DATA__'
 
-    def handle_endtag(self, tag):
-        if tag == 'script':
-            self.active = False
+def creation_matches(expected, actual):
+    """Only creation may omit observed empty editor defaults in the saved record."""
+    normalized = copy.deepcopy(expected)
+    empty_time = {'hours': None, 'minutes': None, 'seconds': None}
+    defaults = {'adminId': None, 'customLabels': {'custom': '', 'custom2': '', 'custom3': ''},
+                'manualTimer': {'time': empty_time}}
+    for key, default in defaults.items():
+        if key not in actual and key in normalized and normalized[key] == default:
+            del normalized[key]
+    general = normalized.get('general', {})
+    if 'progressBefore' not in actual.get('general', {}) and general.get('progressBefore') == empty_time:
+        del general['progressBefore']
+    return submission_matches(normalized, actual)
 
-    def handle_data(self, data):
-        if self.active:
-            self.parts.append(data)
+
+def page_data(html):
+    try:
+        # Decky's frozen Python does not ship html.parser. Recognize only the
+        # specific Next.js script contract, rejecting missing/ambiguous payloads.
+        matches = re.findall(
+            r'''<script\b[^>]*\sid\s*=\s*(["'])__NEXT_DATA__\1[^>]*>(.*?)</script\s*>''',
+            html, flags=re.IGNORECASE | re.DOTALL)
+        if len(matches) != 1:
+            raise ValueError()
+        return json.loads(matches[0][1])['props']['pageProps']
+    except (ValueError, KeyError, TypeError):
+        raise RecordError('Page does not contain a recognized editable record') from None
 
 
 def parse_edit_html(html):
-    parser = _NextData()
-    parser.feed(html)
     try:
-        record = json.loads(''.join(parser.parts))['props']['pageProps']['editData']
-        return validate(record)
-    except (ValueError, KeyError, TypeError):
+        return validate(page_data(html)['editData'])
+    except (KeyError, TypeError):
         raise RecordError('Page does not contain a recognized editable record') from None

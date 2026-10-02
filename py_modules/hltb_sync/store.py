@@ -242,6 +242,12 @@ class Store:
             raise ValueError('Operation has not been submitted')
         with self.db:
             self.db.execute("UPDATE operations SET state='verified' WHERE id=?", (identifier,))
+            if self.preference('import_history:' + identifier, False):
+                self.set_preference('history_imported:' + operation['app'], True)
+            if operation['kind'] == 'history_import':
+                self.db.execute("UPDATE apps SET mode='sessions',automatic=0 WHERE app=?", (operation['app'],))
+            if self.preference('auto_after:' + identifier, False):
+                self.db.execute("UPDATE apps SET mode='sessions',automatic=1 WHERE app=?", (operation['app'],))
             for sid in json.loads(operation['sessions_json']):
                 self.db.execute("UPDATE sessions SET state='synced',reason=NULL WHERE id=?", (sid,))
             if self.mapping(operation['app']):

@@ -24,10 +24,11 @@ class Plugin:
 
     async def _worker(self):
         while True:
-            await asyncio.sleep(60)
+            await asyncio.sleep(5)
             try:
                 async with self.service.lock:
-                    await self.service.auto_sync()
+                    if self.service.auth == 'connected':
+                        await self.service.auto_sync()
             except Exception:
                 self.service.error = 'automatic_sync_needs_attention'
 
@@ -73,6 +74,7 @@ class Plugin:
                     result = await service.connect()
                     self.login_task = asyncio.create_task(self._wait_for_login())
                 elif action == 'disconnect':
+                    service.background_client = None
                     if self.login_task:
                         self.login_task.cancel()
                     service.client.browser.disconnect()
@@ -81,25 +83,40 @@ class Plugin:
                     service.library_cache = []
                     service.library_loaded = False
                     self.store.set_preference('browser_target', None)
+                    self.store.set_preference('connected_user', None)
                     self.store.set_preference('library_cache', [])
                     with self.store.db:
                         self.store.db.execute('UPDATE apps SET automatic=0')
+                    for operation in self.store.operations():
+                        self.store.set_preference('auto_after:' + operation['id'], False)
                     result = None
                 elif action == 'library':
                     result = await service.refresh_library()
                     self.store.set_preference('browser_target', service.client.browser.target_id)
+                elif action == 'prepare_background':
+                    result = await service.prepare_background()
+                elif action == 'prepare_restore':
+                    result = await service.prepare_restore()
+                elif action == 'retain_background':
+                    result = await service.retain_background()
                 elif action == 'search':
                     result = await service.client.search(args['query'])
+                elif action == 'resolve_match':
+                    result = await service.resolve_match(args['app'])
                 elif action == 'read':
                     result = summary(await service.client.read(args['submissionId']))
                 elif action == 'bind':
                     result = await service.bind(args['app'], args['submissionId'], args['mode'])
+                elif action == 'ack_match':
+                    result = service.acknowledge_match(args['appId'], args.get('notice'))
                 elif action == 'preview':
                     result = await service.prepare(args['appId'], args.get('steamMinutes'))
+                elif action == 'preview_import':
+                    result = await service.prepare_history_import(args['appId'], args['totalMinutes'], args.get('includesSaved'))
                 elif action == 'create':
                     result = await service.prepare_create(args['app'], args['gameId'], args['title'], args['platform'])
                 elif action == 'send':
-                    result = await service.send(args['id'], args.get('approved'))
+                    result = await service.send(args['id'], args.get('approved'), args.get('enableAutomatic', False))
                 elif action == 'reconcile':
                     result = await service.reconcile(args['id'])
                 elif action == 'review':

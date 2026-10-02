@@ -1,8 +1,10 @@
 import type { App, Result } from './types';
+import { shortcutHints } from './platform.js';
 
 type Overview = { appid: number; display_name: string; app_type: number; minutes_playtime_forever?: number };
 type Subscription = { unregister(): void };
 type Runtime = {
+  appDetailsStore?: { GetAppDetails(id: number): { strShortcutExe?: string; strShortcutLaunchOptions?: string; nPlaytimeForever?: number } | null };
   appStore?: { allApps: Overview[]; GetAppOverviewByAppID(id: number): Overview | undefined };
   SteamUIStore?: { RunningApps: { appid: number; display_name: string }[] };
   SteamClient?: { User?: {
@@ -15,11 +17,25 @@ type Runtime = {
 };
 const runtime = () => globalThis as unknown as Runtime;
 
+export function canShowMatchPrompt(): boolean {
+  const running = runtime().SteamUIStore?.RunningApps;
+  return Array.isArray(running) && running.length === 0;
+}
+
 function convert(app: Overview): App {
-  const minutes = app.minutes_playtime_forever;
+  let minutes = app.minutes_playtime_forever;
+  let hints = {};
+  try {
+    const details = runtime().appDetailsStore?.GetAppDetails(app.appid);
+    // Non-Steam overviews can report zero while AppDetails has lifetime minutes.
+    if (Number.isInteger(details?.nPlaytimeForever) && details!.nPlaytimeForever! >= 0)
+      minutes = details!.nPlaytimeForever;
+    if (details && app.app_type === 1073741824)
+      hints = shortcutHints(details.strShortcutExe, details.strShortcutLaunchOptions);
+  } catch { /* Missing metadata must not stop local capture. */ }
   return { id: String(app.appid >>> 0), name: app.display_name,
     steam: app.app_type !== 1073741824,
-    minutes: Number.isInteger(minutes) && minutes! >= 0 ? minutes! : null };
+    minutes: Number.isInteger(minutes) && minutes! >= 0 ? minutes! : null, ...hints };
 }
 
 export function libraryApps(query: string): App[] {

@@ -1,6 +1,6 @@
 {
   "name": "decky-hltb-sync",
-  "version": "0.2.0",
+  "version": "0.3.11",
   "private": true,
   "description": "Account-linked HowLongToBeat session tracking for Decky",
   "type": "module",
@@ -8,7 +8,7 @@
   "scripts": {
     "build": "rollup -c",
     "typecheck": "tsc --noEmit",
-    "test": "python -m unittest discover -s tests -v && tsc -p tsconfig.tests.json && node --test tests/browser-probe.test.mjs tests/steam.test.mjs",
+    "test": "python -m unittest discover -s tests -v && tsc -p tsconfig.tests.json && node --test tests/browser-probe.test.mjs tests/steam.test.mjs tests/login.test.mjs tests/matching.test.mjs tests/update-review.test.mjs",
     "package": "pnpm build && python tools/package.py"
   },
   "devDependencies": {

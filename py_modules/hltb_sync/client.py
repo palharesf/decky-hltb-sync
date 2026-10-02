@@ -7,7 +7,7 @@ import copy
 import json
 import time
 from .browser import IntegrationError
-from .records import parse_edit_html, validate, seconds
+from .records import page_data, parse_edit_html, validate, seconds
 
 
 def positive(value):
@@ -83,8 +83,13 @@ class HLTBClient:
         # A partial edit payload must not become a replacement submission that
         # silently resets fields missing from the current website response.
         sections = ('lists', 'general', 'singlePlayer', 'speedRuns', 'multiPlayer',
-                    'review', 'additionals', 'manualTimer', 'customLabels')
+                    'review', 'additionals')
         if any(not isinstance(record.get(key), dict) for key in sections):
+            raise IntegrationError('incomplete_edit_record')
+        # These editor-only sections are absent from current saved records.
+        # Preserve them when supplied; never synthesize fields during an update.
+        if any(key in record and not isinstance(record[key], dict)
+               for key in ('manualTimer', 'customLabels')):
             raise IntegrationError('incomplete_edit_record')
         return record
 
@@ -100,6 +105,20 @@ class HLTBClient:
             raise IntegrationError('submit_not_confirmed')
         # The response is never treated as proof of success. Caller MUST reread.
 
+    async def game_identity(self, game_id):
+        positive(game_id)
+        try:
+            page = page_data(await self.browser.request(f'/game/{game_id}'))
+            games = page['game']['data']['game']
+            if len(games) != 1 or games[0]['game_id'] != game_id:
+                raise ValueError()
+            game = games[0]
+            return {'gameId': game_id, 'title': game['game_name'],
+                    'steamId': str(game.get('profile_steam', '')),
+                    'platforms': [p.strip() for p in game['profile_platform'].split(',')]}
+        except (KeyError, TypeError, ValueError):
+            raise IntegrationError('game_identity_unavailable') from None
+
     async def search(self, query):
         if not isinstance(query, str) or not 2 <= len(query.strip()) <= 120:
             raise IntegrationError('invalid_search')
@@ -107,18 +126,21 @@ class HLTBClient:
         auth = decode(await self.browser.request(path + '/init?t=' + str(int(time.time() * 1000))))
         if not isinstance(auth, dict) or not isinstance(auth.get('token'), str):
             raise IntegrationError('search_contract_changed')
-        keys = [v for k, v in auth.items() if 'key' in k.lower() and isinstance(v, str)]
-        values = [v for k, v in auth.items() if 'val' in k.lower() and isinstance(v, str)]
-        if len(keys) != 1 or len(values) != 1:
+        hp_key, hp_value = auth.get('hpKey'), auth.get('hpVal')
+        if bool(hp_key) != bool(hp_value) or any(v is not None and not isinstance(v, str) for v in (hp_key, hp_value)):
             raise IntegrationError('search_contract_changed')
         payload = {'searchType': 'games', 'searchTerms': query.strip().split(), 'searchPage': 1, 'size': 20,
                    'searchOptions': {'games': {'userId': 0, 'platform': '', 'sortCategory': 'name',
                     'rangeCategory': 'main', 'rangeTime': {'min': 0, 'max': 0},
                     'gameplay': {'perspective': '', 'flow': '', 'genre': '', 'difficulty': ''},
                     'modifier': 'hide_dlc'}, 'users': {}, 'filter': '', 'sort': 0, 'randomizer': 0},
-                   keys[0]: values[0]}
+                   }
+        headers = {'x-auth-token': auth['token']}
+        if hp_key and hp_value:
+            payload[hp_key] = hp_value
+            headers.update({'x-hp-key': hp_key, 'x-hp-val': hp_value})
         response = decode(await self.browser.request(path, payload, method='POST', headers={
-            'x-auth-token': auth['token'], 'x-hp-key': keys[0], 'x-hp-val': values[0]}))
+            **headers}))
         try:
             rows = response['data']
             if not isinstance(rows, list):

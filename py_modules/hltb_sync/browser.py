@@ -11,7 +11,7 @@ import secrets
 import socket
 import struct
 import time
-import urllib.request
+import http.client
 from urllib.parse import urlsplit
 
 ORIGIN = 'https://howlongtobeat.com'
@@ -29,11 +29,15 @@ def is_hltb(url):
 
 class CEF:
     def targets(self):
+        connection = http.client.HTTPConnection('127.0.0.1', 8080, timeout=5)
         try:
-            # Explicitly bypass environment proxy settings for the loopback endpoint.
-            opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-            with opener.open('http://127.0.0.1:8080/json/list', timeout=5) as response:
-                data = response.read(MAX_BYTES + 1)
+            # Direct loopback HTTP avoids environment proxies and urllib.request,
+            # which is not guaranteed to exist in Decky's frozen Python runtime.
+            connection.request('GET', '/json/list')
+            response = connection.getresponse()
+            if response.status != 200:
+                raise ValueError()
+            data = response.read(MAX_BYTES + 1)
             if len(data) > MAX_BYTES:
                 raise ValueError()
             targets = json.loads(data)
@@ -42,6 +46,8 @@ class CEF:
             return targets
         except Exception:
             raise IntegrationError('browser_unavailable') from None
+        finally:
+            connection.close()
 
     def evaluate(self, target, expression):
         url = urlsplit(target['webSocketDebuggerUrl'])
@@ -135,6 +141,7 @@ class BrowserSession:
         self.nonce = None
         self.existing = set()
         self.expires = 0
+        self.marked_only = False
 
     async def begin(self):
         targets = await asyncio.to_thread(self.cef.targets)
@@ -158,7 +165,8 @@ class BrowserSession:
         if not self.nonce or time.monotonic() > self.expires:
             raise IntegrationError('connect_required')
         candidates = [t for t in targets if is_hltb(t.get('url', '')) and (
-            '#decky-hltb-sync=' + self.nonce in t['url'] or t['id'] not in self.existing)]
+            '#decky-hltb-sync=' + self.nonce in t['url'] or
+            (not self.marked_only and t['id'] not in self.existing))]
         if len(candidates) != 1:
             raise IntegrationError('login_window_not_found')
         self.target_id = candidates[0]['id']

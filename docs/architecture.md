@@ -46,10 +46,31 @@ jobs. WAL and synchronous FULL are enabled. On Linux, the private directory is
 0700 and the database 0600.
 
 Mapping binds a local AppID to a complete remote snapshot containing account,
-game, submission and platform identity. Only mapped games are tracked.
+game, submission and platform identity. Direct game sessions are tracked before
+mapping. Known launcher/desktop shortcuts are excluded, including ES-DE.
 Multiple shortcuts sharing a submission and remapping are not yet supported.
-No game/platform is guessed, and catalog estimates are distinct from personal
-progress.
+Platform hints come from shortcut metadata: supported ROM directories and
+direct PCSX2 launches. Paths and arguments are inspected in frontend memory,
+never sent to the backend or persisted. Only the platform and hint source are
+stored. Conflicting hints stay unknown. Catalog estimates remain distinct from
+personal progress.
+
+After an unlinked game closes, its local session remains durable. A plugin-lifetime
+poller first resolves it against a fresh account library. A unique exact normalized
+title/platform record is linked automatically. Otherwise catalog candidates are
+checked against the exact Steam AppID, or an exact title and inferred emulator
+platform. A unique identity reuses an existing record by game ID or creates a
+Playing record after duplicate checks. Ambiguous identity and errors fall back
+to a native dialog. Prompts are serialized and deferred
+while games are running or suspended. Dismissal acknowledges only the session
+shown and never consumes sessions. Unloading closes the dialog without
+acknowledging it. The pending match card remains available after dismissal.
+The match dialog displays the before/after total and a single Confirm and sync
+action. That explicit action links the selected record, prepares the durable
+proposal and sends it without another confirmation. Success or uncertain
+outcomes stay in that dialog. Check status reconciles without resubmission;
+one dialog permits only one send attempt. Existing proposals can be reopened
+through Review in popup. The panel is a fallback, not a required navigation step.
 
 Library queries include all supported lists. Unknown, duplicate or truncated
 responses fail closed; errors never mean an empty library. The inspected
@@ -57,8 +78,13 @@ contract has a 5,000-entry limit; larger/incomplete libraries are rejected.
 
 ## Time sources
 
-Session mode starts at the first observation after mapping, never imports
-historical Steam hours. The frontend polls RunningApps every five seconds,
+Session capture starts at the first observation after installation. Under the
+user's revised policy, automatic Steam record creation imports lifetime history
+once without adding saved sessions on top. Existing records always receive
+only new session deltas, including the first automatic association. Their current
+HLTB progress is preserved even if Steam lifetime is lower, equal or unavailable.
+Explicit manual history import remains available separately.
+The frontend polls RunningApps every five seconds,
 serializes observations, and subscribes to System suspend callbacks with a User
 callback fallback. Missing callbacks disable capture. Suspension is not closure;
 resume does not immediately interpret an empty RunningApps list as exit.
@@ -75,6 +101,20 @@ Lower totals are blocked. The value may be stale after exit or offline; verify
 Steam's total before approval. Steam's own accounting is not guaranteed to
 exclude every idle/suspend scenario. Strict local active-time accounting uses
 session mode. Automatic Steam-total updates are disabled.
+
+One-time history import is a separate manual operation (`history_import`). The
+user reviews the lifetime minutes and confirms that the total includes saved
+sessions. Non-Steam shortcuts use AppDetails.nPlaytimeForever when available,
+because their overview total can be zero. The input is editable because Steam
+metadata can be stale. The operation assigns the total rather than adding it;
+decreases, no-op totals, active/interrupted sessions and unresolved proposals
+are blocked. Verified import consumes only the snapshotted sessions, records
+one-time completion durably, switches to session mode and disables automation.
+When Confirm and sync requests ongoing automation, verification atomically
+enables session autosync. Newer sessions remain pending. Uncertain sends use the same reconciliation
+rules as ordinary updates. This manual option remains available for Non-Steam
+history. Automatic first-use Steam import follows the policy above and persists
+its completion only after verification; uncertain creation is never retried.
 
 ## Writes and reconciliation
 
@@ -105,15 +145,16 @@ does not offer a blind retry. If the server normalized a created record, the
 user can explicitly select and adopt its matching account/game/platform record
 without creating another entry. This resolution is recorded in the ledger.
 
-## Playnite and automatic mode
+## External edits and automatic mode
 
-Playnite can assign its aggregated local total and overwrite Deck additions.
-Neither adding to remote nor taking the maximum solves this. Keep manual mode
-with multiple writers. Session autosync requires a verified manual update and
-explicit acknowledgment that competing writers for that record are disabled.
-The plugin never modifies Playnite settings.
+Dedicated Playnite interoperability certification is outside the acceptance
+scope. Generic preservation and uncertain-write safeguards remain: before an
+update, the full remote snapshot must match the last confirmed baseline. Changes
+pause synchronization for review. This detects drift but cannot prevent an
+external overwrite after synchronization or a concurrent edit between read and
+submit. High-confidence association and subsequent session sync remain automatic.
 
-The worker checks closed pending sessions every minute. Unresolved operations
+The worker checks closed pending sessions every five seconds. Unresolved operations
 block later proposals for that game. Read failures preserve sessions. A prepared
 proposal left after interrupted preflight requires review. Disconnect and manual
 conflict resolution disable automation. No automatic changes to completion,

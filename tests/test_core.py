@@ -40,6 +40,14 @@ class Transport:
 
 
 class CoreTests(unittest.TestCase):
+    def test_next_data_quotes_and_ambiguous_scripts(self):
+        payload = json.dumps({'props': {'pageProps': {'editData': record()}}})
+        html = "<script id='__NEXT_DATA__' type='application/json'>\n" + payload + '</script>'
+        self.assertEqual(parse_edit_html(html), record())
+        for invalid in (html + html, html.replace("id=", "data-id=")):
+            with self.assertRaises(RecordError):
+                parse_edit_html(invalid)
+
     def setUp(self):
         root = Path(__file__).resolve().parents[1] / '.local'
         root.mkdir(exist_ok=True)
