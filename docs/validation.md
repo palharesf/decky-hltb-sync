@@ -15,10 +15,14 @@ first sync, and continued lifetime initialization for new records. Dedicated
 Playnite interoperability testing was removed from acceptance scope; generic
 external-edit and uncertain-write protections remain.
 
-The 0.3.11 artifact was transferred with matching SHA256. Installation was
-deferred because Vexx was running; hardware still uses 0.3.10. The revised
-existing-record first-association policy has local coverage but awaits hardware
-acceptance with another previously unlinked game.
+After Vexx exited, version 0.3.11 was installed through Decky with a verified
+artifact SHA256, without restarting Steam or Decky. Authentication recovered
+automatically: Connected, tracker observing, ten saved sessions, three mappings,
+no pending sessions, no match requests and no error. The preceding Vexx session
+was verified on 0.3.10 before installation: 1,309 seconds added to 7,265 seconds,
+for a total of 8,574 seconds (2:22:54). The revised existing-record
+first-association policy has local coverage but still awaits hardware acceptance
+with another previously unlinked game.
 
 ## Existing Steam account-record matching passed, 2026-10-02
 
