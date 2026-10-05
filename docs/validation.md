@@ -1,5 +1,18 @@
 # Validation evidence
 
+## Post-discard Vexx sync passed on 0.3.16, 2026-10-05
+
+After the user closed Vexx, the latest session held 1904.999702503 captured
+seconds and was synced through one verified operation. The update added 1904
+whole seconds: 10,373 to 12,277 (3:24:37). A fresh authenticated HLTB read through
+the plugin independently confirmed 12,277 seconds for Vexx on PlayStation 2.
+Persisted before/after records differed only in general.progress. The discarded
+74.897-second checkpoint appeared in no write operation. Status was Connected,
+tracker observing, no error, no running game and zero pending sessions.
+This passes normal automatic sync after checkpoint discard. Remaining limitations
+are recovered-time submission tested locally only and the observed Decky hang
+after forced backend termination; these must remain explicit for a beta release.
+
 ## User-confirmed discard outcome, 2026-10-05
 
 The user confirmed they deliberately discarded the recovered Vexx checkpoint.

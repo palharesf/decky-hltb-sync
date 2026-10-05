@@ -88,7 +88,7 @@ results and version-specific limitations.
 | --- | --- | --- |
 | Existing HLTB record, first local association | Passed on 0.3.11, 2026-10-05 (Aperture Desk Job) | Use an installed Steam game with an existing positive PC total and no local mapping. Record the remote baseline, play briefly, exit. Match automatically and add only captured seconds. Reuse the same submission and preserve every other field. |
 | New Steam record | Passed before 0.3.11; local regression coverage retained | Initial total includes Steam lifetime once; subsequent sessions add deltas. Do not add the same session twice. |
-| Already linked Vexx / PS2 | Passed on 0.3.10 before upgrade | Latest verified total was 8,574 seconds. A future 0.3.11 session should add only its active time. |
+| Already linked Vexx / PS2 | Passed on 0.3.16 after checkpoint discard | One verified operation added 1,904 seconds, from 10,373 to 12,277. Fresh HLTB reread matched; all other fields preserved and discarded time excluded. |
 | Suspend / resume | Passed | Suspended time excluded; one logical session. |
 | Offline exit / reconnect | Passed | Save locally, then sync automatically on reconnect without duplication. |
 | Full reboot and silent login recovery | Passed on 0.3.10; upgrade recovery passed on 0.3.11 | Connected without opening login or keyboard; preserve saved sessions and mappings. |
