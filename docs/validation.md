@@ -1,6 +1,6 @@
 # Validation evidence
 
-## Repository shortcut, development version 0.3.17
+## Repository shortcut, 0.3.17
 
 Account + now contains a single GitHub button opening the public repository
 through Steam navigation. It is disabled during connection or an account action;
@@ -11,8 +11,9 @@ all 16 sessions and four mappings were retained, with no error or pending sessio
 An on-device screenshot confirmed the GitHub button under expanded Account.
 The user opened GitHub successfully. A read-only browser-target check confirmed
 the exact project URL, while plugin status remained Connected, tracker observing,
-no error and zero pending sessions. Return navigation remains unverified.
-The published 0.3.16 beta remains unchanged.
+no error and zero pending sessions. The user then returned with B; a screenshot
+confirmed Steam Home, while status remained Connected with no error or pending
+sessions. This passes the shortcut opening and return acceptance check.
 
 ## Post-discard Vexx sync passed on 0.3.16, 2026-10-05
 

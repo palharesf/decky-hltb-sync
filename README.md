@@ -4,9 +4,9 @@ Account-linked HowLongToBeat playtime for Decky. React/TypeScript frontend,
 Python/SQLite backend, official Decky build tooling. Our code is MIT; the
 original template BSD license is preserved in LICENSE.
 
-**0.3.16 is a public beta, not a stable release.** It runs entirely on the Deck
+**0.3.17 is a public beta, not a stable release.** It runs entirely on the Deck
 after installation. See [installation](docs/installation.md),
-[release notes](docs/release-0.3.16.md) and the known limitations below.
+[release notes](docs/release-0.3.17.md) and the known limitations below.
 
 ## Acknowledgments
 
@@ -107,9 +107,8 @@ always welcome. You can also [buy me a coffee on Ko-fi](https://ko-fi.com/fernan
 or [gift a game from my Steam wishlist](https://store.steampowered.com/wishlist/id/fernandopaa/).
 Support is entirely optional; the plugin is free and open source.
 
-The development version also includes **Account + > GitHub** in the plugin
-to open the repository for stars, issues and contribution guidelines.
-This shortcut is not included in the published 0.3.16 beta.
+Use **Account + > GitHub** in the plugin to open the repository for stars,
+issues and contribution guidelines.
 
 ## Development
 
