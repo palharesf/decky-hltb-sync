@@ -9,7 +9,9 @@ The URL contains no account data. All 124 tests, typecheck and build passed.
 Installed 0.3.17 on the Deck with matching SHA256 and no running game. Connected,
 all 16 sessions and four mappings were retained, with no error or pending session.
 An on-device screenshot confirmed the GitHub button under expanded Account.
-Opening the link and returning remain pending the navigation acceptance check.
+The user opened GitHub successfully. A read-only browser-target check confirmed
+the exact project URL, while plugin status remained Connected, tracker observing,
+no error and zero pending sessions. Return navigation remains unverified.
 The published 0.3.16 beta remains unchanged.
 
 ## Post-discard Vexx sync passed on 0.3.16, 2026-10-05
