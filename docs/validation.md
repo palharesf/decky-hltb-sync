@@ -1,5 +1,14 @@
 # Validation evidence
 
+## Repository shortcut, development version 0.3.17
+
+Account + now contains a single GitHub button opening the public repository
+through Steam navigation. It is disabled during connection or an account action;
+opening it cancels automatic login-return navigation without disconnecting HLTB.
+The URL contains no account data. All 124 tests, typecheck and build passed.
+No on-device navigation test or installation was performed for this change.
+The published 0.3.16 beta remains unchanged.
+
 ## Post-discard Vexx sync passed on 0.3.16, 2026-10-05
 
 After the user closed Vexx, the latest session held 1904.999702503 captured

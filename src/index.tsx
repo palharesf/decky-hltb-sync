@@ -107,6 +107,11 @@ function Content({ loginReturn, openMatch, openReview, openCheckpoint, cancelRes
         <PanelSectionRow>{data?.library.length ?? 0} records</PanelSectionRow>
         <PanelSectionRow><ButtonItem disabled={busy} onClick={() => run('library')}>Refresh library</ButtonItem></PanelSectionRow>
         <PanelSectionRow><ButtonItem disabled={busy} onClick={() => { cancelRestore(); loginReturn.cancel(); void run('disconnect'); }}>Disconnect</ButtonItem></PanelSectionRow>
+        <PanelSectionRow><ButtonItem disabled={busy || connecting} onClick={() => {
+          cancelRestore(); loginReturn.cancel();
+          Navigation.CloseSideMenus();
+          Navigation.NavigateToExternalWeb('https://github.com/palharesf/decky-hltb-sync');
+        }}>GitHub</ButtonItem></PanelSectionRow>
       </>}
     </PanelSection>
     <PanelSection title={pending ? `Sessions · ${pending} pending` : 'Sessions'}>

@@ -1,6 +1,6 @@
 {
   "name": "decky-hltb-sync",
-  "version": "0.3.16",
+  "version": "0.3.17",
   "private": true,
   "description": "Account-linked HowLongToBeat session tracking for Decky",
   "type": "module",

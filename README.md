@@ -107,6 +107,10 @@ always welcome. You can also [buy me a coffee on Ko-fi](https://ko-fi.com/fernan
 or [gift a game from my Steam wishlist](https://store.steampowered.com/wishlist/id/fernandopaa/).
 Support is entirely optional; the plugin is free and open source.
 
+The development version also includes **Account + > GitHub** in the plugin
+to open the repository for stars, issues and contribution guidelines.
+This shortcut is not included in the published 0.3.16 beta.
+
 ## Development
 
 Want to contribute? Read the [contribution guidelines](CONTRIBUTING.md).
