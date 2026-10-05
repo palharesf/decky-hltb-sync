@@ -6,7 +6,10 @@ Account + now contains a single GitHub button opening the public repository
 through Steam navigation. It is disabled during connection or an account action;
 opening it cancels automatic login-return navigation without disconnecting HLTB.
 The URL contains no account data. All 124 tests, typecheck and build passed.
-No on-device navigation test or installation was performed for this change.
+Installed 0.3.17 on the Deck with matching SHA256 and no running game. Connected,
+all 16 sessions and four mappings were retained, with no error or pending session.
+An on-device screenshot confirmed the GitHub button under expanded Account.
+Opening the link and returning remain pending the navigation acceptance check.
 The published 0.3.16 beta remains unchanged.
 
 ## Post-discard Vexx sync passed on 0.3.16, 2026-10-05
