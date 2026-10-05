@@ -24,14 +24,25 @@ checks identity and library while the user signs in directly on the website.
 It never reads password fields or exports cookies.
 
 The target ID is persisted privately. Reuse is limited to that exact target and
-HLTB origin, checked again inside each request. After a Steam restart, Connect
-may be needed again; website login persistence belongs to Steam's browser.
+HLTB origin, checked again inside each request. After explicit login, the plugin
+creates a hidden Steam browser view and verifies the same account before
+closing the visible login page. It hides the keyboard and reopens its panel only
+while the user is still on the HLTB page and no game is running. Restart recovery
+recreates the hidden view silently when the persisted login remains valid.
 Disconnect forgets the target and disables automatic sync, but does not log out
 of the website. This is not a separate browser profile.
 
-The HLTB browser target must remain alive for requests. If Steam destroys it
-when returning to Gaming Mode, reconnection is required and sessions remain
-local. This is a key acceptance gate, not a proven background-login solution.
+The login watcher stays active until the handoff and UI return succeed.
+Transient failures retry serially, at most once every five seconds, within a
+two-minute return window after a fresh authenticated status is observed. Login
+itself has a five-minute window. A deadline invalidates late results; it does not
+launch overlapping commands when an earlier request remains outstanding.
+Timeout produces one short notification. No login form or HLTB account write is
+resent by this recovery mechanism. A verified hidden view is reused when only
+navigation or window metadata needs another attempt. New connection attempts,
+disconnect and unload invalidate stale returns. Background startup recovery is
+suppressed while explicit login return is active. User navigation and game
+launches prevent focus theft.
 
 CEF uses the existing loopback port 8080 mechanism used by Decky. WebSocket
 addresses are restricted to localhost/127.0.0.1:8080. Handshakes, message size and

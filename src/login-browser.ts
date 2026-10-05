@@ -28,13 +28,45 @@ export function createLoginBrowser(command: Command, openPanel: () => void,
   let pending: View | undefined;
   let disposed = false;
   let generation = 0;
+  let returnPending = false;
   const api = runtime.SteamClient?.BrowserView;
   const destroy = (view?: View) => { if (view) api?.Destroy(view); };
-  const complete = async (silent = false): Promise<boolean> => {
+  const finishReturn = async (valid: () => boolean): Promise<boolean> => {
+    if (!valid()) return false;
+    const store = runtime.SteamUIStore;
+    const win = store?.GetFocusedWindowInstance();
+    const external = runtime.BrowserAndBackstackInstances?.find(b => b.name === 'ExternalWeb');
+    // Missing window metadata may be temporary; do not silently claim UI success.
+    if (!store || !win || !Array.isArray(store.RunningApps)) return false;
+    if (store.RunningApps.length || win.LocationPathName !== '/externalweb') {
+      returnPending = false;
+      return true;
+    }
+    if (!external) return false;
+    if (!isHLTB(external.URL)) { returnPending = false; return true; }
+    win.VirtualKeyboardManager?.SetVirtualKeyboardHidden();
+    win.NavigateBack();
+    const routeAfterBack = win.LocationPathName;
+    await wait();
+    if (!valid()) return false;
+    if (store.RunningApps.length) { returnPending = false; return true; }
+    if (win.LocationPathName === '/externalweb') return false;
+    if (routeAfterBack !== '/externalweb' && win.LocationPathName !== routeAfterBack) {
+      returnPending = false;
+      return true;
+    }
+    if (store.GetFocusedWindowInstance() === win) openPanel();
+    returnPending = false;
+    return true;
+  };
+  const complete = async (silent = false, isCurrent: () => boolean = () => true): Promise<boolean> => {
     if (!api || disposed) return false;
     const current = ++generation;
+    const valid = () => !disposed && current === generation && isCurrent();
+    if (!valid()) return false;
+    if (!silent && returnPending) return finishReturn(valid);
     const prepared = await command(silent ? 'prepare_restore' : 'prepare_background', {});
-    if (!prepared.ok || disposed || current !== generation) return false;
+    if (!prepared.ok || !valid()) return false;
     const url = (prepared.data as {url?: string})?.url;
     if (!url || !isHLTB(url)) return false;
     const view = api.Create({strInitialURL: url, bOnlyAllowTrustedPopups: true});
@@ -43,36 +75,27 @@ export function createLoginBrowser(command: Command, openPanel: () => void,
     view.SetFocus(false);
     let verified = false;
     try {
-      for (let attempt = 0; attempt < 20 && !disposed && current === generation; attempt++) {
+      for (let attempt = 0; attempt < 20 && valid(); attempt++) {
         await wait();
-        if (disposed || current !== generation) break;
+        if (!valid()) break;
         const result = await command('retain_background', {});
         if (result.ok && result.data === true) { verified = true; break; }
         if (!result.ok && !['login_window_not_found', 'network_or_session_error',
           'login_required', 'hltb_http_error'].includes(result.error)) break;
       }
-      if (!verified || disposed || current !== generation) return false;
+      if (!verified || !valid()) return false;
       destroy(retained);
       retained = view;
       pending = undefined;
-      const store = runtime.SteamUIStore;
-      const win = store?.GetFocusedWindowInstance();
-      const external = runtime.BrowserAndBackstackInstances?.find(b => b.name === 'ExternalWeb');
-      // Do not pull the user out of a game or a screen they opened meanwhile.
-      if (!silent && store?.RunningApps.length === 0 && win?.LocationPathName === '/externalweb'
-        && external && isHLTB(external.URL)) {
-        win.VirtualKeyboardManager?.SetVirtualKeyboardHidden();
-        win.NavigateBack();
-        await wait();
-        if (!disposed && store.RunningApps.length === 0) openPanel();
-      }
-      return true;
+      if (silent) return true;
+      returnPending = true;
+      return await finishReturn(valid);
     } finally {
       if (pending === view) { pending = undefined; destroy(view); }
     }
   };
-  const cancelPending = () => {generation++; destroy(pending); pending = undefined;};
-  return { complete: () => complete(false), restore: () => complete(true), cancelPending, dispose: () => {
+  const cancelPending = () => {generation++; returnPending = false; destroy(pending); pending = undefined;};
+  return { complete: (isCurrent?: () => boolean) => complete(false, isCurrent), restore: () => complete(true), cancelPending, dispose: () => {
     disposed = true;
     cancelPending(); destroy(retained);
     pending = retained = undefined;

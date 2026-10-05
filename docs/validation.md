@@ -1,5 +1,55 @@
 # Validation evidence
 
+## Automatic login return recovery candidate, 2026-10-05
+
+Version 0.3.12 addresses issue #1: the watcher previously stopped before the
+background handoff completed, leaving a transient failure without a retry.
+The revised watcher waits for success, retries serially within a bounded window,
+and invalidates late work on cancellation or timeout. Navigation retries reuse
+a verified hidden view. Regression coverage includes false results, exceptions,
+missing browser metadata, navigation failures, cancellation, deadlines and user
+navigation/game launch during the return delay.
+
+All 115 tests (83 Python, 32 JavaScript), typecheck and build passed.
+Hardware installation and visual login-return acceptance are pending. SSH stopped
+responding during local verification; no restart or installation was attempted.
+The earlier successful account recovery does not certify this new UI behavior.
+
+## Revoked-login recovery passed on 0.3.11, 2026-10-05
+
+The official Logout link was used in the plugin-connected HLTB browser target.
+A subsequent account read returned login_required and reconnect_required.
+Vexx then ran for 425.000 seconds and closed into Pending without a write.
+After the user-authorized login, the same session became Synced automatically.
+Exactly one persisted operation references it: verified, 9,948 to 10,373 seconds
+(2:52:53), with all fields outside general.progress preserved. This tests an
+explicitly revoked login, not waiting for natural cookie expiration.
+
+Steam CEF diagnostics became unresponsive during the login handoff while SSH
+remained available. A direct Gamescope screenshot independently confirmed
+Connected, the 7:05 session marked Synced, and no visible login page or keyboard.
+A read-only SQLite check confirmed the verified operation; an additional live
+remote reread was not performed while CEF diagnostics were unavailable. The
+cause of the diagnostic interruption remains unresolved. No Steam/Decky restart
+or duplicate login submission was used to obtain these results.
+
+## Existing-record first association passed on 0.3.11, 2026-10-05
+
+Aperture Desk Job was installed through Steam for this test. Before launch,
+its existing PC account record contained 1,845 seconds (30:45) and had no local
+mapping. The normal tracker captured 139.996 seconds of active gameplay. After
+exit, automatic resolution reused the same submission, added 139 whole seconds,
+and verified 1,984 seconds (33:04). No manual association or send command was
+used; no match request remained. Automatic sync is enabled for future sessions.
+An independent editable-record reread confirmed the new total. Comparing the
+persisted before/after payloads showed every field outside general.progress
+unchanged. The session is synced and the operation verified. Fractional seconds
+are truncated by the current whole-second submission policy.
+
+This completes the hardware gate for session-only first association of an
+existing HLTB record. Expired-login and unexpected mid-session interruption
+acceptance remain pending.
+
 ## Existing-record session policy, 2026-10-02
 
 Version 0.3.11 changes automatic first association of existing HLTB records to

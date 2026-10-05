@@ -280,12 +280,19 @@ export default definePlugin(() => {
     return prompt;
   };
   const loginBrowser = createLoginBrowser(command, () => Navigation.OpenQuickAccessMenu(QuickAccessTab.Decky));
-  const stopRecovery = startLoginRecovery(getStatus, loginBrowser.restore);
-  const loginReturn = createLoginReturn(getStatus, async () => {
-    let ready = false;
-    try { ready = await loginBrowser.complete(); } catch { /* No raw browser errors. */ }
-    toaster.toast({title: 'HLTB Sync', body: ready ? 'Connected.' : 'Login return failed. Keep the HLTB page open.'});
+  const loginReturn = createLoginReturn(getStatus, async isCurrent => {
+    const ready = await loginBrowser.complete(isCurrent);
+    if (ready && isCurrent()) toaster.toast({title: 'HLTB Sync', body: 'Connected.'});
+    return ready;
+  }, Date.now, () => {
+    loginBrowser.cancelPending();
+    toaster.toast({title: 'HLTB Sync', body: 'Login return timed out. Sessions saved.'});
   });
+  const stopRecovery = startLoginRecovery(async () => {
+    const result = await getStatus();
+    if (result.ok && loginReturn.active()) return {ok: true, data: {...result.data, canRestore: false}};
+    return result;
+  }, loginBrowser.restore);
   let notified = false;
   const stop = startTracker(observe, () => {
     if (!notified) { notified = true; toaster.toast({title: 'HLTB Sync', body: 'Session capture needs attention. Open the plugin to review.'}); }
