@@ -98,6 +98,15 @@ emulators: observing ES-DE does not identify the game running inside it.
 This beta is distributed through GitHub releases. It has not been submitted to
 or approved for the Decky plugin catalog.
 
+## Author and support
+
+Created by [Fernando Palhares](https://palharesf.github.io/).
+
+If you find the plugin useful, a GitHub star, bug report or contribution is
+always welcome. You can also [buy me a coffee on Ko-fi](https://ko-fi.com/fernandopa)
+or [gift a game from my Steam wishlist](https://store.steampowered.com/wishlist/id/fernandopaa/).
+Support is entirely optional; the plugin is free and open source.
+
 ## Development
 
 Want to contribute? Read the [contribution guidelines](CONTRIBUTING.md).
