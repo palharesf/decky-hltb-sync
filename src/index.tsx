@@ -5,8 +5,8 @@ import { canShowMatchPrompt, currentApp, libraryApps, startTracker } from './ste
 import { createLoginReturn } from './login';
 import { createLoginBrowser, startLoginRecovery } from './login-browser';
 import { startMatchNotices, type MatchPrompt } from './match-notices';
-import { showMatchDialog, showUpdateDialog } from './match-dialog';
-import type { App, Entry, MatchRequest, Operation, Result, SearchResult, Status } from './types';
+import { showMatchDialog, showUpdateDialog, showCheckpointDialog } from './match-dialog';
+import type { App, Entry, MatchRequest, Operation, Result, SearchResult, Status, Session } from './types';
 
 const getStatus = callable<[], Result<Status>>('status');
 const command = callable<[action: string, args: Record<string, unknown>], Result<unknown>>('command');
@@ -31,7 +31,7 @@ const messages: Record<string, string> = {
   operation_failed_review_required: 'Update needs review',
 };
 
-function Content({ loginReturn, openMatch, openReview, cancelRestore, rememberLoginWindow }: { loginReturn: ReturnType<typeof createLoginReturn>; cancelRestore(): void; rememberLoginWindow(): void;
+function Content({ loginReturn, openMatch, openReview, openCheckpoint, cancelRestore, rememberLoginWindow }: { loginReturn: ReturnType<typeof createLoginReturn>; cancelRestore(): void; rememberLoginWindow(): void; openCheckpoint(session: Session): MatchPrompt;
   openMatch: (match: MatchRequest) => MatchPrompt; openReview: (operation: Operation) => MatchPrompt }) {
   const [data, setData] = useState<Status>();
   const [error, setError] = useState('');
@@ -118,7 +118,11 @@ function Content({ loginReturn, openMatch, openReview, cancelRestore, rememberLo
           <span>{duration(s.elapsed)}</span>
           <span>{s.phase === 'running' ? 'Playing' : s.phase === 'suspended' ? 'Suspended' : states[s.state] ?? 'Saved'}</span>
         </div>
-        {s.state === 'attention' && <ButtonItem onClick={() => {selectApp(s.app); setAdvanced(true);}}>Review</ButtonItem>}
+        {s.state === 'attention' && <ButtonItem onClick={() => {
+          if (['restart', 'observation_gap'].includes(s.reason ?? '') && !['running', 'suspended'].includes(s.phase)) {
+            void openCheckpoint(s).closed.then(() => refresh());
+          } else {selectApp(s.app); setAdvanced(true);}
+        }}>Review</ButtonItem>}
       </PanelSectionRow>)}
       {(data?.sessions.length ?? 0) > 3 && <ButtonItem onClick={() => setHistory(!history)}>{history ? 'Show less' : 'History'}</ButtonItem>}
       {openOperations.map(o => <PanelSectionRow key={o.id}>
@@ -280,6 +284,13 @@ export default definePlugin(() => {
     void prompt.closed.then(() => {if (activePrompt === prompt) activePrompt = undefined;});
     return prompt;
   };
+  const openCheckpoint = (session: Session): MatchPrompt => {
+    if (activePrompt) return {closed: activePrompt.closed.then(() => false), close: () => {}};
+    const prompt = showCheckpointDialog(session, command);
+    activePrompt = prompt;
+    void prompt.closed.then(() => {if (activePrompt === prompt) activePrompt = undefined;});
+    return prompt;
+  };
   const loginBrowser = createLoginBrowser(command, win => {
     if (!win.MenuStore) throw Error('Login window unavailable');
     win.MenuStore.OpenQuickAccessMenu(QuickAccessTab.Decky);
@@ -301,6 +312,6 @@ export default definePlugin(() => {
   const stop = startTracker(observe, () => {
     if (!notified) { notified = true; toaster.toast({title: 'HLTB Sync', body: 'Session capture needs attention. Open the plugin to review.'}); }
   });
-  return { name: 'HLTB Sync for Deck', titleView: <div style={{flex: 1}}>HLTB Sync</div>, content: <Content loginReturn={loginReturn} cancelRestore={loginBrowser.cancelPending} rememberLoginWindow={loginBrowser.rememberLoginWindow} openMatch={openMatch} openReview={openReview} />,
+  return { name: 'HLTB Sync for Deck', titleView: <div style={{flex: 1}}>HLTB Sync</div>, content: <Content loginReturn={loginReturn} cancelRestore={loginBrowser.cancelPending} rememberLoginWindow={loginBrowser.rememberLoginWindow} openMatch={openMatch} openReview={openReview} openCheckpoint={openCheckpoint} />,
     icon: <span>◷</span>, onDismount: () => { stopRecovery(); loginReturn.cancel(); loginBrowser.dispose(); stopNotices(); activePrompt?.close(); stop(); } };
 });

@@ -1,7 +1,7 @@
 import { DialogBody, DialogButton, DialogFooter, DialogHeader, DropdownItem,
   ModalRoot, TextField, ToggleField, showModal } from '@decky/ui';
 import { useEffect, useRef, useState } from 'react';
-import type { Entry, MatchRequest, Operation, Result, Status } from './types';
+import type { Entry, MatchRequest, Operation, Result, Status, Session } from './types';
 import type { MatchPrompt } from './match-notices';
 import { currentApp } from './steam';
 import { createUpdateReview, type ReviewState } from './update-review';
@@ -9,6 +9,46 @@ import { createUpdateReview, type ReviewState } from './update-review';
 type Command = (action: string, args: Record<string, unknown>) => Promise<Result<unknown>>;
 type Props = { match: MatchRequest; read: () => Promise<Result<Status>>; command: Command; finish(): void };
 const duration = (seconds: number) => `${Math.floor(seconds / 3600)}h ${Math.floor(seconds % 3600 / 60)}m ${Math.floor(seconds % 60)}s`;
+
+function CheckpointDialog({session, command, finish}: {session: Session; command: Command; finish(): void}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const pending = useRef(false);
+  const later = () => {if (!pending.current) finish();};
+  const confirm = async () => {
+    if (pending.current) return;
+    pending.current = true; setBusy(true); setError('');
+    try {
+      const result = await command('checkpoint', {id: session.id});
+      if (result.ok) { finish(); return; }
+      setError('Could not accept saved time. Try again.');
+    } catch { setError('Connection interrupted. Check the session status.'); }
+    finally {pending.current = false; setBusy(false);}
+  };
+  return <ModalRoot onCancel={later} closeModal={later} bCancelDisabled={busy}
+    bDisableBackgroundDismiss bHideCloseIcon={busy}>
+    <DialogHeader>Recover session</DialogHeader>
+    <DialogBody style={{display: 'flex', flexDirection: 'column', gap: 12}}>
+      <div style={{fontSize: 22, fontWeight: 600}}>{session.name}</div>
+      <div>Saved: {duration(session.elapsed)}</div>
+      <div>Unrecorded time is excluded. Confirm to queue the saved time for sync.</div>
+      {error && <div role="alert">{error}</div>}
+    </DialogBody>
+    <DialogFooter style={{display: 'flex', gap: 12}}>
+      <DialogButton disabled={busy} onClick={() => void confirm()}>{busy ? 'Saving…' : 'Keep saved time only'}</DialogButton>
+      <DialogButton disabled={busy} onClick={later}>Later</DialogButton>
+    </DialogFooter>
+  </ModalRoot>;
+}
+
+export function showCheckpointDialog(session: Session, command: Command): MatchPrompt {
+  let settle: (handled: boolean) => void = () => {};
+  const closed = new Promise<boolean>(resolve => {settle = resolve;});
+  const modal = showModal(<CheckpointDialog session={session} command={command}
+    finish={() => {settle(true); modal.Close();}} />, undefined,
+  {strTitle: 'HLTB Sync', bNeverPopOut: true, fnOnClose: () => settle(false)});
+  return {closed, close: () => {settle(false); modal.Close();}};
+}
 
 function UpdateDialog({operation, read, command, finish, autoStart = false}: {
   operation: Operation; read: Props['read']; command: Command; finish(): void; autoStart?: boolean;

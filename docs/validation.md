@@ -1,5 +1,51 @@
 # Validation evidence
 
+## Direct interrupted-session review candidate 0.3.14, 2026-10-05
+
+Review previously expanded Advanced without moving focus, leaving the checkpoint
+action below the viewport. It now opens a recovery modal with the saved duration,
+Keep saved time only and Later. Opening/dismissing does not approve the session.
+All 121 tests (84 Python, 37 JavaScript), typecheck and build passed. The new
+regression confirms no write before checkpoint approval, rejection of duplicate
+approval and exactly one verified update with the saved whole seconds.
+Installed 0.3.14 with matching SHA256 while no game was running. Connected
+and the 74.897-second attention checkpoint survived the update. Opening Review
+showed the native Recover session modal; a screenshot confirmed the saved 1:14
+and visible Keep saved time only / Later buttons, with confirmation focused.
+The checkpoint was not approved by the diagnostic action; user approval and
+final sync verification remain pending.
+
+## Interrupted checkpoint recovered after reboot, 2026-10-05
+
+After the user restarted the Deck and re-enabled SSH, version 0.3.13 reconnected
+silently: Connected, tracker observing, no error, no game running. The interrupted
+Vexx session recovered as attention/interrupted with reason restart and exactly
+74.89750736600035 seconds, equal to the pre-kill checkpoint. One session requires
+review. No new operation was created for it. An independent HLTB editable-record
+reread confirmed the unchanged 10,373-second total (2:52:53).
+
+Checkpoint persistence, downtime exclusion and withholding an unsolicited write
+passed. Explicit Keep saved time only approval and the final verified sync remain
+pending. The loader becoming unresponsive after the isolated SIGKILL remains a
+separate observed recovery limitation; reboot was needed to restore service.
+
+## Abrupt backend interruption: recovery pending, 2026-10-05
+
+During an explicitly coordinated Vexx menu session, the plugin's isolated backend
+process was identified by its exact process title and plugin path. No account
+write was in flight. SIGKILL was sent only to that process after a read-only
+checkpoint of 74.897507 seconds. A later SQLite read retained the same elapsed
+time and running/local state; downtime was not added while the backend was dead.
+
+Decky then stopped answering both its reload RPC and local HTTP endpoint, so
+isolated plugin recovery could not be completed. The parent loader and Steam
+were not killed. The user closed Vexx, and Steam RunningApps was confirmed empty.
+Service restart attempts were denied because administrative authentication was
+required. A normal device restart is the next recovery step. This gate is not
+passed: after reboot, verify interrupted/attention, the unchanged checkpoint,
+no unsolicited account write, and the explicit Keep saved time only flow.
+The last verified Vexx remote baseline before this test was 10,373 seconds.
+
 ## Explicit login return passed on 0.3.13, 2026-10-05
 
 After official logout, a fresh explicit Connect flow and user-authorized login
