@@ -1,5 +1,19 @@
 # Validation evidence
 
+## Horizontal dialog navigation, 0.3.16, 2026-10-05
+
+The user reported that side-by-side recovery actions only accepted up/down.
+DialogFooter provides visual layout but does not define a horizontal navigation
+group. Recovery, update review and match dialogs now share a Focusable action row
+with flow-children="row", using Steam's native directional navigation.
+All 124 tests (87 Python, 37 JavaScript), typecheck and build passed.
+Installed with matching SHA256 while no game was running. A native virtual
+DIR_RIGHT input moved focus from Sync recovered time to Discard session, verified
+by screenshot. During the subsequent left-direction check the modal closed;
+the local checkpoint was then observed as discarded. The diagnostic issued no
+OK/confirm action, so this is not evidence of left-direction navigation passing.
+Physical D-pad and stick confirmation remains a user acceptance check.
+
 ## Explicit recovery choices, 0.3.15, 2026-10-05
 
 Recovery now offers Sync recovered time or Discard session. Discard opens a

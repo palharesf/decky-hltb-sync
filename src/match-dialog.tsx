@@ -1,6 +1,6 @@
-import { DialogBody, DialogButton, DialogFooter, DialogHeader, DropdownItem,
+import { DialogBody, DialogButton, DialogFooter, DialogHeader, DropdownItem, Focusable,
   ModalRoot, TextField, ToggleField, showModal } from '@decky/ui';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Entry, MatchRequest, Operation, Result, Status, Session } from './types';
 import type { MatchPrompt } from './match-notices';
 import { currentApp } from './steam';
@@ -9,6 +9,14 @@ import { createUpdateReview, type ReviewState } from './update-review';
 type Command = (action: string, args: Record<string, unknown>) => Promise<Result<unknown>>;
 type Props = { match: MatchRequest; read: () => Promise<Result<Status>>; command: Command; finish(): void };
 const duration = (seconds: number) => `${Math.floor(seconds / 3600)}h ${Math.floor(seconds % 3600 / 60)}m ${Math.floor(seconds % 60)}s`;
+
+function ActionRow({children}: {children: ReactNode}) {
+  return <DialogFooter>
+    <Focusable flow-children="row" style={{display: 'flex', gap: 12, width: '100%'}}>
+      {children}
+    </Focusable>
+  </DialogFooter>;
+}
 
 function CheckpointDialog({session, command, finish}: {session: Session; command: Command; finish(): void}) {
   const [busy, setBusy] = useState(false);
@@ -36,7 +44,7 @@ function CheckpointDialog({session, command, finish}: {session: Session; command
         : 'Tracking was interrupted. Only the saved time can be synced.'}</div>
       {error && <div role="alert">{error}</div>}
     </DialogBody>
-    <DialogFooter style={{display: 'flex', gap: 12}}>
+    <ActionRow>
       {discard ? <>
         <DialogButton disabled={busy} onClick={() => setDiscard(false)}>Back</DialogButton>
         <DialogButton disabled={busy} onClick={() => void confirm('discard_checkpoint')}>{busy ? 'Saving…' : 'Confirm discard'}</DialogButton>
@@ -44,7 +52,7 @@ function CheckpointDialog({session, command, finish}: {session: Session; command
         <DialogButton disabled={busy} onClick={() => void confirm('checkpoint')}>{busy ? 'Saving…' : 'Sync recovered time'}</DialogButton>
         <DialogButton disabled={busy} onClick={() => {setError(''); setDiscard(true);}}>Discard session</DialogButton>
       </>}
-    </DialogFooter>
+    </ActionRow>
   </ModalRoot>;
 }
 
@@ -79,14 +87,14 @@ function UpdateDialog({operation, read, command, finish, autoStart = false}: {
       {state.phase === 'prepared' && <div>Confirm sends this total. Future sessions sync automatically.</div>}
       {state.message && <div role="status">{state.message}</div>}
     </DialogBody>
-    <DialogFooter style={{display: 'flex', gap: 12}}>
+    <ActionRow>
       {state.phase === 'prepared' && <DialogButton disabled={state.busy}
         onClick={() => void review.send(true)}>Confirm and sync</DialogButton>}
       {state.phase === 'sending' && <DialogButton disabled>Sending…</DialogButton>}
       {state.phase === 'attention' && <DialogButton disabled={state.busy}
         onClick={() => void review.check()}>Check status</DialogButton>}
       <DialogButton disabled={state.busy} onClick={later}>{state.phase === 'verified' ? 'Done' : 'Later'}</DialogButton>
-    </DialogFooter>
+    </ActionRow>
   </ModalRoot>;
 }
 
@@ -190,13 +198,13 @@ function MatchDialog({ match, read, command, finish }: Props) {
       </>}
       {error && <div role="alert">{error}</div>}
     </DialogBody>
-    <DialogFooter style={{display: 'flex', gap: 12}}>
+    <ActionRow>
       {linked ? <DialogButton disabled={busy} onClick={() => void retryPreview()}>Sync saved update</DialogButton> : <>
         <DialogButton disabled={busy || !candidate || (importHistory && !/^[1-9]\d*$/.test(totalMinutes))} onClick={() => void confirm()}>{busy ? 'Checking…' : 'Confirm and sync'}</DialogButton>
         <DialogButton disabled={busy} onClick={() => setChoosing(true)}>Choose another</DialogButton>
       </>}
       <DialogButton disabled={busy} onClick={later}>Later</DialogButton>
-    </DialogFooter>
+    </ActionRow>
   </ModalRoot>;
 }
 

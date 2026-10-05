@@ -18,6 +18,9 @@ then **Confirm discard** to exclude that local segment permanently. Existing HLT
 time is unchanged by discard. **Back** returns to the choice; closing without a
 decision keeps the checkpoint for review. Discarded sessions must stay discarded
 after restart and must not block or inflate later sessions.
+Use both the D-pad and left stick to move left/right between the side-by-side
+actions, including Back and Confirm discard. Directional navigation alone must
+not send or discard anything.
 
 1. Open **Quick Access Menu > Decky > HLTB Sync for Deck**.
 2. Choose **Connect to HLTB**. Sign in on the official site only.
