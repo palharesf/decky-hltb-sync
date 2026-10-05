@@ -82,6 +82,7 @@ results and version-specific limitations.
 | Suspend / resume | Passed | Suspended time excluded; one logical session. |
 | Offline exit / reconnect | Passed | Save locally, then sync automatically on reconnect without duplication. |
 | Full reboot and silent login recovery | Passed on 0.3.10; upgrade recovery passed on 0.3.11 | Connected without opening login or keyboard; preserve saved sessions and mappings. |
+| Explicit login UI return | Passed on 0.3.13, 2026-10-05 | Browser closes, keyboard hidden, HLTB Sync panel reopens with Connected. Exact latency was not measured. |
 | Expired login | Revoked-login recovery passed on 0.3.11, 2026-10-05; natural expiration not separately tested | Preserve sessions, reconnect through normal login, then resume without lost time or duplicate writes. |
 | Unexpected interruption during gameplay | Pending on hardware | Recover only persisted time and flag uncertain intervals; never count downtime. Arrange a controlled test separately. |
 | Uncertain write / preservation / duplicate events | Covered locally | Use simulated transport failures; do not deliberately produce uncertain writes in a personal account. |

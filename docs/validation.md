@@ -1,5 +1,18 @@
 # Validation evidence
 
+## Explicit login return passed on 0.3.13, 2026-10-05
+
+After official logout, a fresh explicit Connect flow and user-authorized login
+completed with Connected, no error and no pending sessions. An initial screenshot
+still showed the authenticated HLTB page; a subsequent status read showed the
+Steam home route, and a direct Gamescope screenshot confirmed the HLTB Sync
+panel open with Connected and no browser page or keyboard visible. No manual
+back-navigation or panel-opening command was issued after submitting the login.
+Return was not immediate; captures did not measure the exact completion latency.
+This passes the normal on-device visual-return gate. Transient-failure recovery
+and focus-loss cases also have local regression coverage; controlled fault
+injection was not performed on the user's account.
+
 ## Login focus recovery candidate 0.3.13, 2026-10-05
 
 The explicit login now remembers its originating Steam window before the hidden
