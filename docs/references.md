@@ -31,18 +31,18 @@ Implemented means code/local tests exist, not live HLTB or Deck acceptance.
 
 | Capability | Candidate status |
 | --- | --- |
-| Official-site login | Integrated Steam browser flow; hardware acceptance pending |
+| Official-site login | Integrated Steam browser flow; login return and revoked-session recovery passed on hardware |
 | Personal library/platform/lists/progress | Implemented with complete-list validation |
 | Catalog search and duration estimates | Implemented against inspected bootstrap contract |
 | Explicit mapping | Implemented, one shortcut per submission |
-| New Playing record | Zero-time preview, duplicate checks, approval/readback |
-| Steam lifetime upload | Explicit import, assignment, preview and manual send |
+| New Playing record | High-confidence automatic creation, duplicate checks and readback; manual fallback |
+| Steam lifetime upload | Automatic once for new Steam records; explicit one-time import for existing mappings |
 | Non-Steam sessions | Mapped direct shortcuts, checkpoints, suspend/resume |
-| Automatic session upload | Opt-in after manual verification and single-writer acknowledgment |
+| Automatic session upload | High-confidence matching and verified sync enable automation; no single-writer acknowledgment |
 | Offline queue/uncertain outcomes | Persistent with explicit reconciliation |
 | Existing notes/ratings/lists/completion | Preserved; never automatically changed |
 | Manual metadata editor | Use the HLTB website; not implemented in this candidate |
-| Multi-device convergence | Not guaranteed; explicit Playnite policy required |
+| Multi-device convergence | Not guaranteed; other writers may replace totals; no dedicated Playnite certification |
 | Remapping/shared submissions | Not yet implemented |
 | VNDB, QuickSearch, themes and tags | Not ported; outside HLTB account/session integration |
 | Full Playnite feature parity | Not claimed |

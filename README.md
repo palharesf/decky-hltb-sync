@@ -4,6 +4,10 @@ Account-linked HowLongToBeat playtime for Decky. React/TypeScript frontend,
 Python/SQLite backend, official Decky build tooling. Our code is MIT; the
 original template BSD license is preserved in LICENSE.
 
+**0.3.16 is a public beta, not a stable release.** It runs entirely on the Deck
+after installation. See [installation](docs/installation.md),
+[release notes](docs/release-0.3.16.md) and the known limitations below.
+
 ## Acknowledgments
 
 This project is inspired by [HowLongToBeat for Playnite](https://github.com/Lacro59/playnite-howlongtobeat-plugin),
@@ -24,8 +28,6 @@ for the game-session and suspension references, and
 reference. See [reference evidence](docs/references.md) for inspected versions
 and implementation details.
 
-**0.3.11 is an integration candidate, not a hardware-certified release.**
-
 Unlinked games are resolved against the current HLTB library before showing a
 dialog. Unique title/platform records can be linked automatically. When catalog
 lookup is needed for a Steam game, its HLTB Steam AppID must match before an
@@ -33,10 +35,10 @@ automatic creation. New Steam records start with the current lifetime total,
 including saved sessions. Existing records receive only new local session time,
 including their first sync from this Deck. Steam totals never replace an existing
 record automatically. Explicit manual history import remains an advanced option.
-Installation, frontend loading and backend status passed a Deck smoke test.
-Authenticated reads and the first pilot import reached HLTB on the Deck;
-ongoing automatic gameplay/suspend acceptance remains outstanding.
-Private website endpoints and Steam internals can change.
+Hardware acceptance covered Steam games, the direct Vexx/PS2 shortcut,
+automatic matching and sync, suspend/resume, offline recovery, login return,
+reboot recovery and checkpoint discard. Local tests cover additional failure
+cases. See [validation evidence](docs/validation.md) for exact scope.
 
 ## Features
 
@@ -67,6 +69,34 @@ Private website endpoints and Steam internals can change.
 
 Automatic completion is intentionally excluded. Use direct game shortcuts for
 emulators: observing ES-DE does not identify the game running inside it.
+
+## Known beta limitations
+
+- **Forced backend termination:** deliberately killing the plugin backend made
+  Decky unresponsive during testing. A device restart restored service and the
+  saved checkpoint survived. Automatic recovery from this failure is not proven.
+- **Recovered-time submission:** discarding an interrupted checkpoint passed on
+  hardware. Sending its saved time has local regression coverage only. Time
+  after the last persisted observation cannot be reconstructed automatically.
+- **Unofficial integration:** HLTB website endpoints and Steam internals are not
+  stable public APIs. Changes may break login, matching, capture or submission.
+  Natural login expiration was not tested separately; explicit logout/relogin
+  recovery passed on hardware.
+- **Matching:** high-confidence matches are automatic; ambiguous identities or
+  errors may need manual review. Remapping and multiple shortcuts sharing one
+  HLTB submission are not implemented.
+- **Platform coverage:** Steam games and Vexx/PS2 through a direct shortcut were
+  tested. Epic/GOG launchers and other emulators are not broadly certified.
+  An ES-DE session cannot identify individual games launched inside it.
+- **Other writers:** this plugin adds sessions to existing records, but cannot
+  stop Playnite, another device or a manual edit from later replacing that total.
+  Multi-device convergence and exactly-once delivery are not guaranteed.
+  Uncertain writes pause for reconciliation rather than blind retries.
+- **Feature scope:** full Playnite feature parity is not claimed. Edit ratings,
+  notes and completion status on HLTB; this plugin preserves those fields.
+
+This beta is distributed through GitHub releases. It has not been submitted to
+or approved for the Decky plugin catalog.
 
 ## Development
 

@@ -79,9 +79,9 @@ After the confirmed update verifies, check that later session sync is enabled
 without extra setup. Repeat exit/offline/recovery tests and verify remote edits
 pause sync rather than overwrite unseen changes.
 
-## Resume checklist after 0.3.11 installation
+## Beta acceptance status through 0.3.16
 
-Recorded on 2026-10-02. See [validation evidence](validation.md) for measured
+Updated on 2026-10-05. See [validation evidence](validation.md) for measured
 results and version-specific limitations.
 
 | Case | Status | Next action and expected result |
