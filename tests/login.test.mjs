@@ -261,3 +261,71 @@ test('navigation or game launch during the return delay does not open the panel'
     h.browser.dispose();
   }
 });
+
+test('login remembers its window when hidden browser creation clears Steam focus', async () => {
+  const h = browserHarness();
+  h.browser.rememberLoginWindow();
+  const create = h.runtime.SteamClient.BrowserView.Create;
+  h.runtime.SteamClient.BrowserView.Create = () => {
+    h.runtime.SteamUIStore.GetFocusedWindowInstance = () => null;
+    return create();
+  };
+  assert.equal(await h.browser.complete(), true);
+  assert.equal(h.win.LocationPathName, '/library/home');
+  assert.equal(h.calls.filter(([action]) => action === 'hide-keyboard').length, 1);
+  assert.equal(h.calls.filter(([action]) => action === 'panel').length, 1);
+  h.browser.dispose();
+});
+
+test('captured login window survives focus loss before handoff and after NavigateBack', async () => {
+  for (const stage of ['before', 'after']) {
+    const h = browserHarness();
+    h.browser.rememberLoginWindow();
+    if (stage === 'before') h.runtime.SteamUIStore.GetFocusedWindowInstance = () => null;
+    else {
+      const back = h.win.NavigateBack;
+      h.win.NavigateBack = () => {back(); h.runtime.SteamUIStore.GetFocusedWindowInstance = () => null;};
+    }
+    assert.equal(await h.browser.complete(), true);
+    assert.equal(h.calls.filter(([action]) => action === 'panel').length, 1);
+    h.browser.dispose();
+  }
+});
+
+test('remembered window does not steal focus from a different Steam window', async () => {
+  const h = browserHarness();
+  h.browser.rememberLoginWindow();
+  h.runtime.SteamUIStore.GetFocusedWindowInstance = () => ({LocationPathName: '/library/downloads'});
+  assert.equal(await h.browser.complete(), true);
+  assert.ok(!h.calls.some(([action]) => ['back', 'panel', 'hide-keyboard'].includes(action)));
+  h.browser.dispose();
+});
+
+test('panel failure retries on the saved return route without navigating back twice', async () => {
+  const h = browserHarness();
+  let panels = 0;
+  const browser = createLoginBrowser(async action => action === 'prepare_background'
+    ? {ok: true, data: {url: 'https://howlongtobeat.com/#test'}} : {ok: true, data: true},
+  win => {assert.equal(win, h.win); if (++panels === 1) throw Error('Panel not ready');},
+  h.runtime, async () => {});
+  browser.rememberLoginWindow();
+  await assert.rejects(browser.complete());
+  h.runtime.SteamUIStore.GetFocusedWindowInstance = () => null;
+  assert.equal(await browser.complete(), true);
+  assert.equal(panels, 2);
+  assert.equal(h.calls.filter(([action]) => action === 'back').length, 1);
+  browser.dispose();
+});
+
+test('fallback main window is captured only for an explicit login and discarded on cancellation', async () => {
+  const h = browserHarness();
+  h.runtime.SteamUIStore.GetFocusedWindowInstance = () => null;
+  h.runtime.SteamUIStore.WindowStore = {GamepadUIMainWindowInstance: h.win};
+  h.browser.rememberLoginWindow();
+  h.browser.cancelPending();
+  assert.equal(await h.browser.complete(), false);
+  assert.ok(!h.calls.some(([action]) => action === 'panel'));
+  h.browser.rememberLoginWindow();
+  assert.equal(await h.browser.complete(), true);
+  h.browser.dispose();
+});

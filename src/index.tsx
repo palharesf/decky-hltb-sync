@@ -31,7 +31,7 @@ const messages: Record<string, string> = {
   operation_failed_review_required: 'Update needs review',
 };
 
-function Content({ loginReturn, openMatch, openReview, cancelRestore }: { loginReturn: ReturnType<typeof createLoginReturn>; cancelRestore(): void;
+function Content({ loginReturn, openMatch, openReview, cancelRestore, rememberLoginWindow }: { loginReturn: ReturnType<typeof createLoginReturn>; cancelRestore(): void; rememberLoginWindow(): void;
   openMatch: (match: MatchRequest) => MatchPrompt; openReview: (operation: Operation) => MatchPrompt }) {
   const [data, setData] = useState<Status>();
   const [error, setError] = useState('');
@@ -92,6 +92,7 @@ function Content({ loginReturn, openMatch, openReview, cancelRestore }: { loginR
     const result = await run<{url: string}>('connect');
     if (result) {
       Navigation.CloseSideMenus(); Navigation.NavigateToExternalWeb(result.url);
+      rememberLoginWindow();
       loginReturn.begin();
     }
   };
@@ -279,7 +280,10 @@ export default definePlugin(() => {
     void prompt.closed.then(() => {if (activePrompt === prompt) activePrompt = undefined;});
     return prompt;
   };
-  const loginBrowser = createLoginBrowser(command, () => Navigation.OpenQuickAccessMenu(QuickAccessTab.Decky));
+  const loginBrowser = createLoginBrowser(command, win => {
+    if (!win.MenuStore) throw Error('Login window unavailable');
+    win.MenuStore.OpenQuickAccessMenu(QuickAccessTab.Decky);
+  });
   const loginReturn = createLoginReturn(getStatus, async isCurrent => {
     const ready = await loginBrowser.complete(isCurrent);
     if (ready && isCurrent()) toaster.toast({title: 'HLTB Sync', body: 'Connected.'});
@@ -297,6 +301,6 @@ export default definePlugin(() => {
   const stop = startTracker(observe, () => {
     if (!notified) { notified = true; toaster.toast({title: 'HLTB Sync', body: 'Session capture needs attention. Open the plugin to review.'}); }
   });
-  return { name: 'HLTB Sync for Deck', titleView: <div style={{flex: 1}}>HLTB Sync</div>, content: <Content loginReturn={loginReturn} cancelRestore={loginBrowser.cancelPending} openMatch={openMatch} openReview={openReview} />,
+  return { name: 'HLTB Sync for Deck', titleView: <div style={{flex: 1}}>HLTB Sync</div>, content: <Content loginReturn={loginReturn} cancelRestore={loginBrowser.cancelPending} rememberLoginWindow={loginBrowser.rememberLoginWindow} openMatch={openMatch} openReview={openReview} />,
     icon: <span>◷</span>, onDismount: () => { stopRecovery(); loginReturn.cancel(); loginBrowser.dispose(); stopNotices(); activePrompt?.close(); stop(); } };
 });

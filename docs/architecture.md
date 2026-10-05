@@ -42,7 +42,11 @@ resent by this recovery mechanism. A verified hidden view is reused when only
 navigation or window metadata needs another attempt. New connection attempts,
 disconnect and unload invalidate stale returns. Background startup recovery is
 suppressed while explicit login return is active. User navigation and game
-launches prevent focus theft.
+launches prevent focus theft. The explicit login captures its originating
+Steam window before background-view creation. The return uses that same window
+when Steam temporarily reports no focused window, and opens its Quick Access
+menu directly. A different focused window or changed route still cancels UI
+return. A failed panel opening retries without navigating back twice.
 
 CEF uses the existing loopback port 8080 mechanism used by Decky. WebSocket
 addresses are restricted to localhost/127.0.0.1:8080. Handshakes, message size and

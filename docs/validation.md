@@ -1,5 +1,29 @@
 # Validation evidence
 
+## Login focus recovery candidate 0.3.13, 2026-10-05
+
+The explicit login now remembers its originating Steam window before the hidden
+view can clear focused-window metadata. Return navigation and panel opening use
+that window, while another focused window, game launch or route change prevents
+focus theft. A failed panel opening can retry without a second back navigation.
+All 120 tests (83 Python, 37 JavaScript), typecheck and build passed. Five new
+regression cases cover missing focus before/during/after handoff, a different
+focused window, panel failure and cancellation of the saved-window fallback.
+Installed 0.3.13 through Decky with matching artifact SHA256 and no running
+games. It reconnected silently with no error or pending sessions. Explicit
+login-return verification is pending credential entry; the existing connection
+was left intact.
+
+## Explicit login return observation on 0.3.12, 2026-10-05
+
+The user-authorized official login completed and backend status reported
+Connected, no error and no pending sessions. A direct Gamescope screenshot
+showed the Steam home screen without the login page or keyboard, but the plugin
+panel had not reopened. During and after the transition,
+SteamUIStore.GetFocusedWindowInstance() returned null. The UI-return gate is
+therefore not passed: the saved-window/focus transition needs investigation.
+The successful login must not be reported as complete visual-return acceptance.
+
 ## Automatic login return recovery candidate, 2026-10-05
 
 Version 0.3.12 addresses issue #1: the watcher previously stopped before the
@@ -11,9 +35,12 @@ missing browser metadata, navigation failures, cancellation, deadlines and user
 navigation/game launch during the return delay.
 
 All 115 tests (83 Python, 32 JavaScript), typecheck and build passed.
-Hardware installation and visual login-return acceptance are pending. SSH stopped
-responding during local verification; no restart or installation was attempted.
-The earlier successful account recovery does not certify this new UI behavior.
+SSH was temporarily unavailable during local verification. After the bridge
+recovered, 0.3.12 was installed through Decky with matching artifact SHA256 and
+no running game. Silent reconnection succeeded: Connected, tracker observing,
+14 saved sessions, four mappings, no pending sessions and no error. No Steam or
+Decky restart was required. Explicit login-return visual acceptance remains
+pending; silent reconnection does not certify this new UI behavior.
 
 ## Revoked-login recovery passed on 0.3.11, 2026-10-05
 
