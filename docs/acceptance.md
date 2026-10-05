@@ -94,7 +94,7 @@ results and version-specific limitations.
 | Full reboot and silent login recovery | Passed on 0.3.10; upgrade recovery passed on 0.3.11 | Connected without opening login or keyboard; preserve saved sessions and mappings. |
 | Explicit login UI return | Passed on 0.3.13, 2026-10-05 | Browser closes, keyboard hidden, HLTB Sync panel reopens with Connected. Exact latency was not measured. |
 | Expired login | Revoked-login recovery passed on 0.3.11, 2026-10-05; natural expiration not separately tested | Preserve sessions, reconnect through normal login, then resume without lost time or duplicate writes. |
-| Unexpected interruption during gameplay | Pending on hardware | Recover only persisted time and flag uncertain intervals; never count downtime. Arrange a controlled test separately. |
+| Unexpected interruption during gameplay | Persistence, downtime exclusion and user-confirmed discard passed through 0.3.16 | Sending recovered time is locally tested only. Isolated backend SIGKILL left Decky unresponsive and required a device restart; disclose this limitation. |
 | Uncertain write / preservation / duplicate events | Covered locally | Use simulated transport failures; do not deliberately produce uncertain writes in a personal account. |
 
 For the next first-association test, refresh and reread the candidate immediately

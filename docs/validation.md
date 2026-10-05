@@ -1,5 +1,15 @@
 # Validation evidence
 
+## User-confirmed discard outcome, 2026-10-05
+
+The user confirmed they deliberately discarded the recovered Vexx checkpoint.
+A fresh plugin status read on 0.3.16 reported Connected, no error, zero pending
+sessions and zero open operations. The 74.897-second checkpoint is discarded.
+This passes the hardware discard branch. Sending recovered time remains covered
+locally, not exercised on hardware. The abrupt-backend-kill loader hang remains
+a known limitation; recovery required a device restart. This confirmation does
+not separately certify both physical directional controls.
+
 ## Horizontal dialog navigation, 0.3.16, 2026-10-05
 
 The user reported that side-by-side recovery actions only accepted up/down.
