@@ -366,6 +366,59 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
         operation = self.store.operations()[0]
         self.assertEqual(seconds(json.loads(operation['after_json'])) - seconds(json.loads(operation['before_json'])), 74)
 
+    async def test_discarded_checkpoint_survives_restart_and_does_not_block_new_sessions(self):
+        self.service.set_automatic(APP['id'], True)
+        self.observe(0)
+        self.observe(10)
+        self.store.recover()
+        session = self.store.sessions()[0]
+        before = copy.deepcopy(self.client.remote)
+        self.service.discard_checkpoint(session['id'])
+        self.store.recover()
+        await self.service.auto_sync()
+        self.assertEqual(self.client.writes, 0)
+        self.assertEqual(self.client.remote, before)
+        saved = self.store.sessions()[0]
+        self.assertEqual((saved['state'], saved['phase'], saved['elapsed']), ('discarded', 'closed', 10))
+        for action in (self.service.accept_checkpoint, self.service.discard_checkpoint):
+            with self.assertRaises(ValueError):
+                action(session['id'])
+        self.observe(20, epoch='next')
+        self.observe(25, [], epoch='next')
+        await self.service.auto_sync()
+        self.assertEqual(self.client.writes, 1)
+        self.assertEqual(seconds(self.client.remote) - seconds(before), 5)
+        self.assertNotIn(session['id'], json.loads(self.store.operations()[0]['sessions_json']))
+
+    async def test_discarded_unmapped_checkpoint_is_not_matched_or_added_to_new_record(self):
+        with self.store.db:
+            self.store.db.execute('DELETE FROM mappings')
+        self.observe(0)
+        self.observe(10)
+        self.store.recover()
+        session = self.store.sessions()[0]
+        self.service.discard_checkpoint(session['id'])
+        self.assertEqual(self.service.match_requests(), [])
+        await self.service.resolve_match(APP)
+        self.assertEqual(self.client.writes, 0)
+        self.client.exists = False
+        operation = await self.service.prepare_create(APP, 2, APP['name'], 'PlayStation 2', include_sessions=True)
+        self.assertEqual(seconds(json.loads(self.store.operation(operation['id'])['after_json'])), 0)
+        self.assertEqual(json.loads(self.store.operation(operation['id'])['sessions_json']), [])
+
+    async def test_checkpoint_discard_rejects_active_and_write_linked_sessions(self):
+        self.observe(0)
+        self.observe(10)
+        session = self.store.sessions()[0]
+        with self.assertRaises(ValueError):
+            self.service.discard_checkpoint(session['id'])
+        self.store.recover()
+        self.store.add_operation(APP['id'], 'sessions', self.client.remote, self.client.remote, [session['id']])
+        with self.assertRaises(ValueError):
+            self.service.discard_checkpoint(session['id'])
+        self.assertEqual(self.store.sessions()[0]['state'], 'attention')
+        self.assertEqual(self.client.writes, 0)
+
     async def test_unavailable_is_not_game_exit(self):
         self.observe(0)
         self.observe(10)

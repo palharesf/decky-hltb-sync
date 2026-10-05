@@ -12,6 +12,13 @@ on upgrade. Never restart Steam/Decky during gameplay.
 
 ## Account gate
 
+For interrupted-session recovery, Review opens a direct dialog. Choose
+**Sync recovered time** to queue only the saved duration, or **Discard session**
+then **Confirm discard** to exclude that local segment permanently. Existing HLTB
+time is unchanged by discard. **Back** returns to the choice; closing without a
+decision keeps the checkpoint for review. Discarded sessions must stay discarded
+after restart and must not block or inflate later sessions.
+
 1. Open **Quick Access Menu > Decky > HLTB Sync for Deck**.
 2. Choose **Connect to HLTB**. Sign in on the official site only.
 3. The plugin reopens after confirmation; use **Account options > Refresh library** if needed. Check title,

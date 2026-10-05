@@ -1,5 +1,21 @@
 # Validation evidence
 
+## Explicit recovery choices, 0.3.15, 2026-10-05
+
+Recovery now offers Sync recovered time or Discard session. Discard opens a
+second confirmation with Back focused first. Closing the dialog preserves the
+checkpoint. Discard retains the local audit row, excludes it from pending time,
+matching and new-record session totals, and never writes to HLTB. Sessions linked
+to a write intent must be reconciled instead. Advanced uses the same dialog.
+All 124 tests (87 Python, 37 JavaScript), typecheck and build passed. Regressions
+cover restart persistence, no remote change on discard, future-session sync,
+new-record exclusion and rejection of active/write-linked checkpoints.
+The real 74.897-second Vexx checkpoint remains unapproved during this update.
+Installed 0.3.15 with matching SHA256 and no running game. Connected remained
+visible; the database retained the unchanged attention checkpoint. Screenshots
+verified both recovery choices and the separate discard confirmation with Back
+focused. Returned with Back without accepting or discarding the real checkpoint.
+
 ## Direct interrupted-session review candidate 0.3.14, 2026-10-05
 
 Review previously expanded Advanced without moving focus, leaving the checkpoint

@@ -142,7 +142,7 @@ class Service:
         entries = self.library_cache if self.library_loaded else self.store.preference('library_cache', [])
         grouped = {}
         for session in self.store.sessions():
-            if session['phase'] not in ('closed', 'interrupted') or session['state'] == 'synced':
+            if session['phase'] not in ('closed', 'interrupted') or session['state'] in ('synced', 'discarded'):
                 continue
             if not self.store.mapping(session['app']):
                 grouped.setdefault(session['app'], []).append(session)
@@ -166,7 +166,7 @@ class Service:
         app_id = app['id']
         if self.store.mapping(app_id):
             return {'state': 'linked'}
-        sessions = [s for s in self.store.sessions() if s['app'] == app_id and s['state'] != 'synced']
+        sessions = [s for s in self.store.sessions() if s['app'] == app_id and s['state'] not in ('synced', 'discarded')]
         if not sessions or any(s['phase'] != 'closed' or s['state'] == 'attention' for s in sessions):
             return {'state': 'attention'}
         if any(o['app'] == app_id and o['state'] in ('prepared', 'sending', 'uncertain', 'conflict')
@@ -339,7 +339,7 @@ class Service:
             raise ValueError('Existing records found; choose one before creating another')
         record = new_record(self.client.user_id, positive(game_id), title, platform)
         self.store.remember_app(app)
-        sessions = [s for s in self.store.sessions() if s['app'] == app['id'] and s['state'] != 'synced'] if include_sessions else []
+        sessions = [s for s in self.store.sessions() if s['app'] == app['id'] and s['state'] not in ('synced', 'discarded')] if include_sessions else []
         if any(s['phase'] != 'closed' or s['state'] == 'attention' for s in sessions):
             raise ValueError('Review interrupted sessions before syncing')
         elapsed = sum(int(s['elapsed']) for s in sessions)
@@ -475,14 +475,24 @@ class Service:
             self.store.db.execute("UPDATE operations SET state='resolved',resolution='adopted_existing_record' WHERE id=?",
                                 (identifier,))
 
-    def accept_checkpoint(self, session_id):
+    def _review_checkpoint(self, session_id, discard=False):
         session = next((s for s in self.store.sessions() if s['id'] == session_id), None)
         if not session or session['state'] != 'attention' or session['reason'] not in ('restart', 'observation_gap'):
             raise ValueError('Only an interrupted checkpoint may be accepted')
         if session['phase'] in ('running', 'suspended'):
             raise ValueError('Close the game before reviewing its checkpoint')
+        if any(session_id in json.loads(o['sessions_json']) for o in self.store.operations()) or self.store.db.execute(
+                'SELECT 1 FROM jobs WHERE session=?', (session_id,)).fetchone():
+            raise ValueError('Reconcile the existing write intent first')
         with self.store.db:
-            self.store.db.execute("UPDATE sessions SET phase='closed',state='pending',reason=NULL WHERE id=?", (session_id,))
+            self.store.db.execute("UPDATE sessions SET phase='closed',state=?,reason=NULL WHERE id=?",
+                                  ('discarded' if discard else 'pending', session_id))
+
+    def accept_checkpoint(self, session_id):
+        self._review_checkpoint(session_id)
+
+    def discard_checkpoint(self, session_id):
+        self._review_checkpoint(session_id, discard=True)
 
     def set_automatic(self, app_id, enabled, single_writer=None):
         if type(enabled) is not bool:

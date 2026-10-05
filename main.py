@@ -131,6 +131,8 @@ class Plugin:
                     result = service.cancel_prepared(args['id'])
                 elif action == 'checkpoint':
                     result = service.accept_checkpoint(args['id'])
+                elif action == 'discard_checkpoint':
+                    result = service.discard_checkpoint(args['id'])
                 elif action == 'automatic':
                     result = service.set_automatic(args['appId'], args['enabled'], args.get('singleWriter'))
                 else:

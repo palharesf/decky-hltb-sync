@@ -13,30 +13,37 @@ const duration = (seconds: number) => `${Math.floor(seconds / 3600)}h ${Math.flo
 function CheckpointDialog({session, command, finish}: {session: Session; command: Command; finish(): void}) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [discard, setDiscard] = useState(false);
   const pending = useRef(false);
-  const later = () => {if (!pending.current) finish();};
-  const confirm = async () => {
+  const close = () => {if (!pending.current) {if (discard) setDiscard(false); else finish();}};
+  const confirm = async (action: 'checkpoint' | 'discard_checkpoint') => {
     if (pending.current) return;
     pending.current = true; setBusy(true); setError('');
     try {
-      const result = await command('checkpoint', {id: session.id});
+      const result = await command(action, {id: session.id});
       if (result.ok) { finish(); return; }
-      setError('Could not accept saved time. Try again.');
+      setError('Could not save your choice. Check the session status.');
     } catch { setError('Connection interrupted. Check the session status.'); }
     finally {pending.current = false; setBusy(false);}
   };
-  return <ModalRoot onCancel={later} closeModal={later} bCancelDisabled={busy}
+  return <ModalRoot onCancel={close} closeModal={close} bCancelDisabled={busy}
     bDisableBackgroundDismiss bHideCloseIcon={busy}>
-    <DialogHeader>Recover session</DialogHeader>
+    <DialogHeader>{discard ? 'Discard session?' : 'Recover session'}</DialogHeader>
     <DialogBody style={{display: 'flex', flexDirection: 'column', gap: 12}}>
       <div style={{fontSize: 22, fontWeight: 600}}>{session.name}</div>
       <div>Saved: {duration(session.elapsed)}</div>
-      <div>Unrecorded time is excluded. Confirm to queue the saved time for sync.</div>
+      <div>{discard ? 'This saved time will not be sent. Existing HLTB time stays unchanged.'
+        : 'Tracking was interrupted. Only the saved time can be synced.'}</div>
       {error && <div role="alert">{error}</div>}
     </DialogBody>
     <DialogFooter style={{display: 'flex', gap: 12}}>
-      <DialogButton disabled={busy} onClick={() => void confirm()}>{busy ? 'Saving…' : 'Keep saved time only'}</DialogButton>
-      <DialogButton disabled={busy} onClick={later}>Later</DialogButton>
+      {discard ? <>
+        <DialogButton disabled={busy} onClick={() => setDiscard(false)}>Back</DialogButton>
+        <DialogButton disabled={busy} onClick={() => void confirm('discard_checkpoint')}>{busy ? 'Saving…' : 'Confirm discard'}</DialogButton>
+      </> : <>
+        <DialogButton disabled={busy} onClick={() => void confirm('checkpoint')}>{busy ? 'Saving…' : 'Sync recovered time'}</DialogButton>
+        <DialogButton disabled={busy} onClick={() => {setError(''); setDiscard(true);}}>Discard session</DialogButton>
+      </>}
     </DialogFooter>
   </ModalRoot>;
 }

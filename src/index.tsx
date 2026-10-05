@@ -16,7 +16,7 @@ const ButtonItem = (props: ComponentProps<typeof DeckyButtonItem>) =>
   <DeckyButtonItem layout="below" childrenContainerWidth="max" bottomSeparator="none" {...props} />;
 const DropdownItem = (props: ComponentProps<typeof DeckyDropdownItem>) =>
   <DeckyDropdownItem layout="below" childrenContainerWidth="max" {...props} />;
-const states: Record<string, string> = { local: 'Saved', pending: 'Pending', synced: 'Synced', attention: 'Review' };
+const states: Record<string, string> = { local: 'Saved', pending: 'Pending', synced: 'Synced', attention: 'Review', discarded: 'Discarded' };
 const messages: Record<string, string> = {
   connect_required: 'Reconnect to HLTB', login_required: 'Login expired · Reconnect',
   browser_unavailable: 'Connection unavailable · Saved',
@@ -80,7 +80,7 @@ function Content({ loginReturn, openMatch, openReview, openCheckpoint, cancelRes
   const connecting = data?.auth === 'connecting';
   const openOperations = data?.operations.filter(o => ['prepared', 'uncertain', 'conflict'].includes(o.state)) ?? [];
   const recent = data?.sessions.slice(0, history ? 20 : 3) ?? [];
-  const pending = data?.sessions.filter(s => s.state !== 'synced' && !['running', 'suspended'].includes(s.phase)).length ?? 0;
+  const pending = data?.sessions.filter(s => !['synced', 'discarded'].includes(s.state) && !['running', 'suspended'].includes(s.phase)).length ?? 0;
   const selectApp = (id: string) => {
     setAppId(id); setReview(undefined); setApproval(undefined);
     setImportHistory(false); setImportMinutes(String(currentApp(id)?.minutes ?? ''));
@@ -242,7 +242,7 @@ function Content({ loginReturn, openMatch, openReview, openCheckpoint, cancelRes
         <div>{s.name}: {duration(s.elapsed)} · {states[s.state] ?? s.state} · {s.phase}</div>
         {s.reason && <div>Reason: {s.reason.replace(/_/g, ' ')}</div>}
         {s.state === 'attention' && ['restart', 'observation_gap'].includes(s.reason ?? '') && !['running', 'suspended'].includes(s.phase) &&
-          <ButtonItem disabled={busy} onClick={() => run('checkpoint', {id: s.id})}>Keep saved time only</ButtonItem>}
+          <ButtonItem disabled={busy} onClick={() => {void openCheckpoint(s).closed.then(() => refresh());}}>Review</ButtonItem>}
       </PanelSectionRow>)}
     </PanelSection>
     </>}
